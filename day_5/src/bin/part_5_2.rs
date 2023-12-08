@@ -1,7 +1,9 @@
+use itertools::Itertools;
+
 fn main() {
     let input = include_str!("./input_1.txt");
 
-    let output = part_1(input);
+    let output = part_2(input);
     dbg!(output);
 }
 
@@ -22,35 +24,40 @@ fn parse_input(input: &str) -> Vec<(u32, u32, u32)> {
         // Given the input, the first number is the destination, the second is the source and the third is the length
         map.push((numbers[1] as u32, numbers[0] as u32, numbers[2] as u32));
     }
-    map.sort_by_key(| tupl | tupl.0); 
+    map.sort_by_key(|tupl| tupl.0);
 
     map
 }
 
 fn check_key(map: &Vec<(u32, u32, u32)>, x: u32) -> u32 {
     for (src, dest, len) in map {
-        if x >= *src && x <= (*src + *len) {
+        if x >= *src && x <= (*src + *len - 1) {
             return *dest + (x - *src);
         }
     }
     x
 }
 
-fn part_1(input: &str) -> u32 {
+fn part_2(input: &str) -> u32 {
     let mut maps_as_string = split_by_empty_lines(input);
 
-    let seeds = maps_as_string.remove(0);
+    let seeds = maps_as_string
+        .remove(0)
+        .strip_prefix("seeds:")
+        .unwrap()
+        .trim()
+        .split_whitespace()
+        .map(|seed| seed.parse::<u32>().unwrap());
+
     let maps = maps_as_string
         .into_iter()
         .map(|map| parse_input(map))
         .collect::<Vec<Vec<(u32, u32, u32)>>>();
 
-    let converted_seed_numbers: Vec<u32> = seeds
-        .strip_prefix("seeds:")
-        .unwrap()
-        .trim()
-        .split_whitespace()
-        .map(|seed| seed.parse::<u32>().unwrap())
+    let converted_seed_numbers: Vec<u32> = seeds.clone()
+        .tuples()
+        .map(|(seed_num, len)| (seed_num..seed_num + len).collect::<Vec<u32>>())
+        .flatten()
         .map(|seed_num| {
             maps.clone()
                 .into_iter()
@@ -106,8 +113,8 @@ mod tests {
     }
 
     #[test]
-    fn test_part_1() {
-        let expected_output = 35;
-        assert_eq!(part_1(INPUT), expected_output);
+    fn test_part_2() {
+        let expected_output = 46;
+        assert_eq!(part_2(INPUT), expected_output);
     }
 }
